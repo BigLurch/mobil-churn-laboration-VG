@@ -24,3 +24,9 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Generated model files
+*.joblib
+
+# Training outputs
+outputs/

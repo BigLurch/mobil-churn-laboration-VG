@@ -1,19 +1,190 @@
+
 name: CI
 
-on: push
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "data/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/ci.yml"
+      - "kontroller/**"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "data/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/ci.yml"
+      - "kontroller/**"
+  
+  schedule:
+    - cron: "0 6 * * 1"
+      timezone: "Europe/Stockholm"
+
+  workflow_dispatch:
+    inputs:
+      datafil:
+        description: "Välj CSV-fil för datavalidering"
+        required: true
+        type: choice
+        default: "data/kundbas.csv"
+        options:
+          - "data/kundbas.csv"
+          - "data/kundbas_ny_leverans.csv"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  allt:
+  test:
+    name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v7
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env 
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
-      - run: pip install -e .
+      - name: Run tests
+        run: uv run --extra dev python -m pytest -v
 
-      - run: pytest
+  
+  datakontroll:
+    name: Validate customer data
+    runs-on: ubuntu-latest
 
-      - run: python -m churn.model
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python-env 
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Validate original customer data
+        env:
+          DATAFIL: ${{ inputs.datafil || 'data/kundbas.csv' }}
+        run: python -m kontroller.validate_data "$DATAFIL"
+
+
+  train:
+    name: Train model
+    needs: [test, datakontroll]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Train model
+        run: python -m churn.model
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modell-${{ github.sha }}
+          path: outputs/
+          if-no-files-found: error
+
+  utvardera:
+    name: Evaluate model
+    needs: train
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Download model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: modell-${{ github.sha }}
+          path: outputs/
+
+      - name: Evaluate model quality
+        run: python -m churn.evaluate
+
+      - name: Write metrics to Summary
+        if: always()
+        run: |
+          if [ -f outputs/matvarden.json ]; then
+            echo "## Model evaluation" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat outputs/matvarden.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  ringlista:
+    name: Generate call list
+    needs: utvardera
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Download approved model
+        uses: actions/download-artifact@v4
+        with:
+          name: modell-${{ github.sha }}
+          path: outputs/
+
+      - name: Generate call list
+        run: python -m churn.score
+
+      - name: Upload call list
+        uses: actions/upload-artifact@v4
+        with:
+          name: ringlista-${{ github.sha }}
+          path: outputs/ringlista.csv
+          if-no-files-found: error
