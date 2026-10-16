@@ -3,7 +3,7 @@ import pandera.pandas as pa
 SCHEMA = pa.DataFrameSchema(
     {
         "kund_id": pa.Column(int, unique=True),
-        "alder": pa.Column(int, pa.Check.in_range(18, 110)),
+        "alder": pa.Column(int, pa.Check.in_range(18, 100)),
         "region": pa.Column(str),
         "abonnemang": pa.Column(str),
         "manader_som_kund": pa.Column(int, pa.Check.ge(0)),
