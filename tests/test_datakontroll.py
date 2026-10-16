@@ -14,3 +14,20 @@ def test_new_delivery_fails():
 
     with pytest.raises(pa.errors.SchemaErrors):
         SCHEMA.validate(df, lazy=True)
+
+
+@pytest.mark.parametrize("alder", [18, 100])
+def test_age_boundaries_pass(alder):
+    df = pd.read_csv("data/kundbas.csv").head(1).copy()
+    df["alder"] = alder
+
+    SCHEMA.validate(df, lazy=True)
+
+
+@pytest.mark.parametrize("alder", [17, 101])
+def test_age_outside_boundaries_fails(alder):
+    df = pd.read_csv("data/kundbas.csv").head(1).copy()
+    df["alder"] = alder
+
+    with pytest.raises(pa.errors.SchemaErrors):
+        SCHEMA.validate(df, lazy=True)
