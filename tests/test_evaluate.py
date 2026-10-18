@@ -1,9 +1,11 @@
 """Tests for the model quality gate."""
 
 import json
+
 import pytest
 
 from churn.evaluate import main
+
 
 @pytest.mark.parametrize("roc_auc", [1.20, -0.10, float("nan")])
 def test_invalid_roc_auc_is_rejected(tmp_path, monkeypatch, roc_auc):
