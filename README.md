@@ -74,3 +74,28 @@ python -m churn.score           # skriver outputs/ringlista.csv
 | `models/modell.joblib` | Modellen som kundtjänst använder just nu |
 | `arenden/` | Ärendena, och `skapa.sh` som gör dem till issues |
 | `.github/workflows/ci.yml` | Vårt CI |
+
+## Model quality and artifacts
+
+We use ROC AUC because accuracy alone can be misleading: about 81% of customers
+in the supplied dataset do not churn. We use 0.70 as a minimum project threshold,
+above the DummyClassifier baseline of 0.50. This is a project acceptance criterion,
+not a guarantee of production performance.
+
+Training uses seed 42 and a stratified 25% test split. The DummyClassifier
+comparison uses the same split settings.
+
+The old `models/modell.joblib` was removed from Git and is no longer tracked.
+To create and check a new model locally, run:
+
+```bash
+uv run --locked python -m churn.model
+uv run --locked python -m churn.evaluate
+```
+
+Training creates:
+- `outputs/modell.joblib`: the new trained model.
+- `outputs/matvarden.json`: the model results, commit and data information.
+
+Evaluation checks whether the model passes the quality threshold.
+These generated files are not saved in Git.
