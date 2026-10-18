@@ -36,3 +36,14 @@ def test_quality_threshold(tmp_path, monkeypatch, roc_auc, expected_result):
     result = main([str(metrics_path)])
 
     assert result == expected_result
+
+def test_nan_threshold_is_rejected(tmp_path, monkeypatch):
+    monkeypatch.setenv("MIN_ROC_AUC", "nan")
+
+    metrics_path = tmp_path / "matvarden.json"
+    metrics = {"roc_auc": 0.80}
+    metrics_path.write_text(json.dumps(metrics), encoding="utf-8")
+
+    result = main([str(metrics_path)])
+
+    assert result == 1
