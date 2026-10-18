@@ -47,3 +47,16 @@ def test_nan_threshold_is_rejected(tmp_path, monkeypatch):
     result = main([str(metrics_path)])
 
     assert result == 1
+
+def test_non_numeric_threshold_is_rejected(tmp_path, monkeypatch):
+    monkeypatch.setenv("MIN_ROC_AUC", "abc")
+
+    metrics_path = tmp_path / "matvarden.json"
+    metrics_path.write_text(
+        json.dumps({"roc_auc": 0.80}),
+        encoding="utf-8",
+    )
+
+    result = main([str(metrics_path)])
+
+    assert result == 1
