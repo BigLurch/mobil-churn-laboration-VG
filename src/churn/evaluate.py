@@ -27,6 +27,13 @@ def main(argv: list[str] | None = None) -> int:
     matvarden = json.loads(sokvag.read_text())
     print(json.dumps(matvarden, indent=2))
 
+    roc_auc = matvarden["roc_auc"]
+
+    # Validate the metric before comparing it with the quality threshold.
+    if not 0 <= roc_auc <= 1:
+        print("ERROR: ROC AUC must be between 0 and 1.")
+        return 1
+
     if matvarden["roc_auc"] < troskel:
         print(f"FEL: ROC AUC {matvarden['roc_auc']:.3f} är under tröskeln {troskel:.2f}.")
         return 1
