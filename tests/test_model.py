@@ -42,12 +42,12 @@ def test_roc_auc_minst_070(resultat):
     )
 
 def test_modell_slar_dummy(resultat):
-    modell, matvarden = resultat
+    _, matvarden = resultat # _ because we need only the metrics
 
     X, y = dela_upp(skapa_features(las_data()))
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=SEED, stratify=y
+        X, y, test_size=0.25, random_state=SEED, stratify=y
     )
 
     dummy = DummyClassifier(strategy="prior") 
