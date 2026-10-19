@@ -82,31 +82,24 @@ uv run --frozen --no-sync python -m churn.score
 | `src/churn/evaluate.py` | Kvalitetsgrind på mätvärdena |
 | `src/churn/score.py` | Ringlistan |
 | `tests/` | Tester på tre nivåer: kod, data och modell |
-| `models/modell.joblib` | Modellen som kundtjänst använder just nu |
+| `outputs/modell.joblib` |  Modellen som skapas när träningen körs. Sparas inte i Git |
 | `arenden/` | Ärendena, och `skapa.sh` som gör dem till issues |
 | `.github/workflows/ci.yml` | Vårt CI |
 
-## Model quality and artifacts
+## Modellen och kvalitetskontrollen
 
-We use ROC AUC because accuracy alone can be misleading: about 81% of customers
-in the supplied dataset do not churn. We use 0.70 as a minimum project threshold,
-above the DummyClassifier baseline of 0.50. This is a project acceptance criterion,
-not a guarantee of production performance.
+Vi använder ROC AUC för att kontrollera modellen. Gränsen är 0,70:
+om resultatet är lägre stoppas körningen. Vi kontrollerar också att
+resultatet och den valda gränsen är giltiga tal mellan 0 och 1.
 
-Training uses seed 42 and a stratified 25% test split. The DummyClassifier
-comparison uses the same split settings.
+Modellen jämförs med en enkel DummyClassifier. Båda använder samma
+uppdelning med 25 % testdata, så att jämförelsen görs på samma kunder.
 
-The old `models/modell.joblib` was removed from Git and is no longer tracked.
-To create and check a new model locally, run:
+Den gamla modellen i `models/modell.joblib` är borttagen från Git.
+När du kör träningskommandot ovan får du en ny modell i
+`outputs/modell.joblib`. Resultaten sparas i `outputs/matvarden.json`,
+tillsammans med information om vilken kod och data som användes.
 
-```bash
-uv run --locked python -m churn.model
-uv run --locked python -m churn.evaluate
-```
-
-Training creates:
-- `outputs/modell.joblib`: the new trained model.
-- `outputs/matvarden.json`: the model results, commit and data information.
-
-Evaluation checks whether the model passes the quality threshold.
-These generated files are not saved in Git.
+Kör sedan utvärderingskommandot ovan för att kontrollera om modellen
+blir godkänd. Modellen och resultaten i `outputs/` ignoreras av Git
+via `.gitignore` och följer därför inte med i vanliga commits.
