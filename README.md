@@ -82,6 +82,24 @@ uv run --frozen --no-sync python -m churn.score
 | `src/churn/evaluate.py` | Kvalitetsgrind på mätvärdena |
 | `src/churn/score.py` | Ringlistan |
 | `tests/` | Tester på tre nivåer: kod, data och modell |
-| `models/modell.joblib` | Modellen som kundtjänst använder just nu |
+| `outputs/modell.joblib` |  Modellen som skapas när träningen körs. Sparas inte i Git |
 | `arenden/` | Ärendena, och `skapa.sh` som gör dem till issues |
 | `.github/workflows/ci.yml` | Vårt CI |
+
+## Modellen och kvalitetskontrollen
+
+Vi använder ROC AUC för att kontrollera modellen. Gränsen är 0,70:
+om resultatet är lägre stoppas körningen. Vi kontrollerar också att
+resultatet och den valda gränsen är giltiga tal mellan 0 och 1.
+
+Modellen jämförs med en enkel DummyClassifier. Båda använder samma
+uppdelning med 25 % testdata, så att jämförelsen görs på samma kunder.
+
+Den gamla modellen i `models/modell.joblib` är borttagen från Git.
+När du kör träningskommandot ovan får du en ny modell i
+`outputs/modell.joblib`. Resultaten sparas i `outputs/matvarden.json`,
+tillsammans med information om vilken kod och data som användes.
+
+Kör sedan utvärderingskommandot ovan för att kontrollera om modellen
+blir godkänd. Modellen och resultaten i `outputs/` ignoreras av Git
+via `.gitignore` och följer därför inte med i vanliga commits.

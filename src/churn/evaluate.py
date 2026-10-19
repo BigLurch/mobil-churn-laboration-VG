@@ -18,8 +18,18 @@ STANDARDTROSKEL = 0.70
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     sokvag = Path(argv[0]) if argv else Path("outputs/matvarden.json")
-    troskel = float(os.environ.get("MIN_ROC_AUC", STANDARDTROSKEL))
 
+    # Accept only number in MIN_ROC_AUC otherwise trow a ValueError
+    try:
+        troskel = float(os.environ.get("MIN_ROC_AUC", STANDARDTROSKEL))
+    except ValueError:
+        print("ERROR: MIN_ROC_AUC must be a number.")
+        return 1
+
+    # Stop evaluation if the configured threshold is outside the valid range.
+    if not 0 <= troskel <= 1:
+        print("ERROR: MIN_ROC_AUC must be between 0 and 1.")
+        return 1
     if not sokvag.exists():
         print(f"FEL: hittar inte {sokvag}. Har modellen tränats, eller laddats ner hit?")
         return 1
@@ -27,12 +37,18 @@ def main(argv: list[str] | None = None) -> int:
     matvarden = json.loads(sokvag.read_text())
     print(json.dumps(matvarden, indent=2))
 
+    roc_auc = matvarden["roc_auc"]
+
+    # Validate the metric before comparing it with the quality threshold.
+    if not 0 <= roc_auc <= 1:
+        print("ERROR: ROC AUC must be between 0 and 1.")
+        return 1
+
     if matvarden["roc_auc"] < troskel:
         print(f"FEL: ROC AUC {matvarden['roc_auc']:.3f} är under tröskeln {troskel:.2f}.")
         return 1
     print(f"OK: ROC AUC {matvarden['roc_auc']:.3f} klarar tröskeln {troskel:.2f}.")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
