@@ -1,0 +1,33 @@
+
+# Git
+.git
+.github
+
+# Local Python-env
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+*.egg-info
+
+# Dev-files
+.vscode
+.idea
+tests
+arenden
+README.md
+
+# Secret files
+.env
+.env.*
+*.pem
+*.key
+
+# Old model files
+models/
+
+# Updata thet not supose to be included in the images
+outputs/*
+!outputs/modell.joblib
