@@ -56,13 +56,19 @@ print("PASS: 100 giltiga kunder i ringlistan")
 
 echo "[2/2] Testing missing model handling..."
 
-if docker run --rm "$IMAGE" \
-    python -m churn.score outputs/missing-model.joblib
+if output=$(docker run --rm "$IMAGE" \
+    python -m churn.score outputs/missing-model.joblib 2>&1)
 then
     echo "FAIL: Missing model was accepted"
     exit 1
-else
+fi
+
+if [[ "$output" == *"FEL: hittar inte outputs/missing-model.joblib"* ]]; then
     echo "PASS: Missing model correctly rejected"
+else
+    echo "FAIL: Unexpected error from container"
+    echo "$output"
+    exit 1
 fi
 
 echo "=================================="
