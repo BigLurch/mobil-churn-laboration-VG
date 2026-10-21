@@ -270,7 +270,7 @@ jobs:
             exit 1
           fi
 
-          for result in "$TEST_RESULT" "$DATA_RESULT" "$TRAIN_RESULT" "$EVAL_RESULT"; do
+          for result in "$TEST_RESULT" "$DATA_RESULT" "$TRAIN_RESULT" "$EVAL_RESULT" "DOCKER_RESULT"; do
             if [[ "$result" != "success" ]]; then
               echo "CI misslyckades: minst ett obligatoriskt jobb har resultat $result"
               exit 1
