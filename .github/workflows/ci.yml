@@ -60,6 +60,8 @@ jobs:
               - '.github/actions/**'
               - 'Dockerfile'
               - 'docker/**'
+              - '.dockerignore'
+              - 'scripts/**'
 
       - name: Bestäm om CI behövs
         id: decision
@@ -175,6 +177,27 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  docker:
+    name: Build and smoke-test Docker image
+    needs: utvardera
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download approved model
+        uses: actions/download-artifact@v4
+        with:
+          name: modell-${{ github.sha }}
+          path: outputs/
+
+      - name: Build Docker image
+        run: docker build -t churn-docker:ci .
+
+      - name: Run Docker smoke-test
+        run: bash scripts/smoke_test.sh churn-docker:ci
+
   ringlista:
     name: Generate call list
     needs: utvardera
@@ -219,6 +242,7 @@ jobs:
       - datakontroll
       - train
       - utvardera
+      - docker
 
     steps:
       - name: Kontrollera pipeline-resultat
@@ -229,6 +253,7 @@ jobs:
           DATA_RESULT: ${{ needs.datakontroll.result }}
           TRAIN_RESULT: ${{ needs.train.result }}
           EVAL_RESULT: ${{ needs.utvardera.result }}
+          DOCKER_RESULT: ${{ needs.docker.result }}
         run: |
           if [[ "$CHANGES_RESULT" != "success" ]]; then
             echo "Ändringskontrollen misslyckades."
@@ -245,7 +270,7 @@ jobs:
             exit 1
           fi
 
-          for result in "$TEST_RESULT" "$DATA_RESULT" "$TRAIN_RESULT" "$EVAL_RESULT"; do
+          for result in "$TEST_RESULT" "$DATA_RESULT" "$TRAIN_RESULT" "$EVAL_RESULT" "$DOCKER_RESULT"; do
             if [[ "$result" != "success" ]]; then
               echo "CI misslyckades: minst ett obligatoriskt jobb har resultat $result"
               exit 1
