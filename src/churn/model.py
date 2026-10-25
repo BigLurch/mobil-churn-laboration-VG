@@ -87,6 +87,9 @@ def main(utkatalog: Path = Path("outputs")) -> None:
             "datafil": matvarden["datafil"],
             "data_sha256": matvarden["data_sha256"],
         })
+        # Keep the exact model and data produced by this traning run
+        mlflow.log_artifact(str(utkatalog / "modell.joblib"))
+        mlflow.log_artifact(str(utkatalog / "matvarden.json"))
 
 
 if __name__ == "__main__":
