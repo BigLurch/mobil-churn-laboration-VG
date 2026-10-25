@@ -135,6 +135,8 @@ jobs:
           python-version: "3.11"
 
       - name: Train model
+        env:
+          MLFLOW_RUN_NAME: model-ci-${{ github.run_number }}-${{ github.run_attempt }}
         run: uv run --frozen --no-sync python -m churn.model
 
       - name: Upload model artifact
@@ -143,14 +145,16 @@ jobs:
           name: modell-${{ github.sha }}
           path: outputs/
           if-no-files-found: error
+
       # Keep the database and artifact files together.
       - name: Package MLflow results
         run: tar -czf mlflow-tracking.tar.gz mlflow.db mlruns/
-      # Upload save the archive for this workflow run
+
+      # Save the archive for this workflow run.
       - name: Upload MLflow results
         uses: actions/upload-artifact@v4
         with:
-          name: mlflow-${{ github.sha}}
+          name: mlflow-${{ github.sha }}
           path: mlflow-tracking.tar.gz
           if-no-files-found: error
   utvardera:

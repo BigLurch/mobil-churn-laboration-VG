@@ -71,7 +71,9 @@ def main(utkatalog: Path = Path("outputs")) -> None:
     mlflow.set_experiment("mobil-churn")
 
     # Each traning execution creates a separate run so we can compare traning results.
-    with mlflow.start_run():
+    # Use the run name supplied locally or by GitHub Actions.
+    run_name = os.environ.get("MLFLOW_RUN_NAME", "model-local")
+    with mlflow.start_run(run_name=run_name):
         mlflow.log_params({
             "model_type": "Logistic Regression",
             "random_state": SEED,
