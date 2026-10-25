@@ -35,3 +35,6 @@ outputs/
 mlflow.db*
 mlruns/
 mlartifacts/
+
+# Backup of the initial MLflow database
+mlflow-db.backup
