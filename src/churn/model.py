@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 import joblib
+import mlflow
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -63,6 +64,29 @@ def main(utkatalog: Path = Path("outputs")) -> None:
     joblib.dump(modell, utkatalog / "modell.joblib")
     (utkatalog / "matvarden.json").write_text(json.dumps(matvarden, indent=2))
     print(json.dumps(matvarden, indent=2))
+    # Store traning results in a LOCAL database
+    mlflow.set_tracking_uri(
+        os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+    )
+    mlflow.set_experiment("mobil-churn")
+
+    # Each traning execution creates a separate run so we can compare traning results.
+    with mlflow.start_run():
+        mlflow.log_params({
+            "model_type": "Logistic Regression",
+            "random_state": SEED,
+            "test_size": 0.25,
+            "max_iter": modell.named_steps["klassificerare"].max_iter,
+        })
+        mlflow.log_metrics({
+            "roc_auc": matvarden["roc_auc"],
+            "accuracy":matvarden["accuracy"],
+        })
+        mlflow.set_tags({
+            "commit": matvarden["commit"],
+            "datafil": matvarden["datafil"],
+            "data_sha256": matvarden["data_sha256"],
+        })
 
 
 if __name__ == "__main__":
