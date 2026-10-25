@@ -103,3 +103,58 @@ tillsammans med information om vilken kod och data som användes.
 Kör sedan utvärderingskommandot ovan för att kontrollera om modellen
 blir godkänd. Modellen och resultaten i `outputs/` ignoreras av Git
 via `.gitignore` och följer därför inte med i vanliga commits.
+
+## MLflow
+
+MLflow sparar parametrar, mätvärden, commit och datasetets hash
+när modellen tränas. Varje körning sparar också en kopia av
+`modell.joblib` och `matvarden.json`.
+
+I CI sparas resultaten i ett artifact som heter `mlflow-<commit SHA>`.
+
+### Kör lokalt
+
+Kör från projektets huvudmapp:
+
+```bash
+uv sync --locked --extra dev
+uv run --locked python -m churn.model
+uv run --locked python -m churn.evaluate
+uv run --locked mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001
+```
+
+Öppna http://127.0.0.1:5001 och välj `mobil-churn` under
+Model training. Stoppa gränssnittet med Ctrl+C.
+
+Lokala resultat sparas i `mlflow.db` och `mlruns/`.
+De sparas inte i Git.
+
+### Öppna resultat från CI
+
+Ladda ner artifactet `mlflow-…` från GitHub Actions.
+Packa upp ZIP-filen och kopiera `mlflow-tracking.tar.gz` till `outputs/`.
+
+Använd en ny, tom mapp och kör:
+
+```bash
+mkdir -p outputs/mlflow-ci
+tar -xzf outputs/mlflow-tracking.tar.gz -C outputs/mlflow-ci
+uv run --locked python scripts/restore_mlflow.py outputs/mlflow-ci
+uv run --locked mlflow ui --backend-store-uri sqlite:///outputs/mlflow-ci/mlflow.db --port 5001
+```
+
+Stoppa ett eventuellt öppet MLflow-gränssnitt innan du startar ett nytt
+på samma port.
+
+Öppna http://127.0.0.1:5001 och välj `mobil-churn`.
+Nu kan du se resultaten från CI utan att träna modellen igen.
+
+Skriptet uppdaterar sökvägarna i den nedladdade databasen och sparar
+en backup. Modellen ändras inte. När gränssnittet är stängt kan
+den extraherade mappen tas bort.
+
+### Varning vid tester
+
+Testerna kan visa en varning om `noload`, som används internt av
+MLflow med SQLAlchemy och är markerat för framtida borttagning.
+Vi har lämnat varningen synlig. Alla 28 tester passerar.
