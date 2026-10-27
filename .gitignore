@@ -30,3 +30,11 @@ Thumbs.db
 
 # Training outputs
 outputs/
+
+# Local MLflow tracking files
+mlflow.db*
+mlruns/
+mlartifacts/
+
+# Backup of the initial MLflow database
+mlflow-db.backup

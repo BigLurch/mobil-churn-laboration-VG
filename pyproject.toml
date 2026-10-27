@@ -12,6 +12,7 @@ dependencies = [
     "scikit-learn>=1.5",
     "joblib>=1.4",
     "pandera[pandas]>=0.34.1",
+    "mlflow>=3.17.2",
 ]
 
 [project.optional-dependencies]
