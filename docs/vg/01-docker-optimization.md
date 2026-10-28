@@ -43,15 +43,3 @@ The image size increased by only 556 bytes. The measured build time decreased by
 ### Trade-offs
 
 The solution requires explicit directory ownership and permission management. Future changes to output directories may require corresponding Dockerfile updates.
-
-## Improvement 2 – Multi-stage Docker build
-
-*To be implemented and measured.*
-
-## Conclusion
-
-*To be completed after both changes have been verified.*
-
-## Pull Request
-
-*Link to be added after PR creation.*
