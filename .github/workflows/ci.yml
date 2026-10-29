@@ -251,7 +251,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag and publish approved image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: >-
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          github.repository == 'kevinbrunomlops/mobil-churn-laboration'
         env:
           REPOSITORY: ${{ github.repository }}
           COMMIT_SHA: ${{ github.sha }}
@@ -265,7 +268,10 @@ jobs:
           echo "Published: $TAG"
 
       - name: Pull and verify published image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: >-
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          github.repository == 'kevinbrunomlops/mobil-churn-laboration'
         env:
           REPOSITORY: ${{ github.repository }}
           COMMIT_SHA: ${{ github.sha }}
